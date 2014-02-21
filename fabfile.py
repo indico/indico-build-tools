@@ -1,6 +1,7 @@
 import os
 import re
 import datetime
+import sys
 import time
 import getpass
 
@@ -97,8 +98,8 @@ def _install(eggs, no_deps=False):
     for egg in eggs:
         put(egg, env.remote_tmp_dir)
         sudo('{0}{2} --always-unzip {1}'.format(env.EASY_INSTALL_EXEC,
-             os.path.join(env.remote_tmp_dir, os.path.basename(egg)),
-             " --no-deps" if no_deps else ""))
+                                                os.path.join(env.remote_tmp_dir, os.path.basename(egg)),
+                                                " --no-deps" if no_deps else ""))
 
 
 # Modifiers
