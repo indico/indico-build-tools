@@ -1,17 +1,17 @@
 prod:
-    name : "production"
+    name: "production"
     machines:
         - worker-1
         - worker-2
         - worker-3
 
 test:
-    name : "testing"
+    name: "testing"
     machines:
-    - test-worker-1
-    - test-worker-2
+        - test-worker-1
+        - test-worker-2
 
 dev:
-    name : "development"
+    name: "development"
     machines:
-    - dev-worker-1
+        - dev-worker-1
