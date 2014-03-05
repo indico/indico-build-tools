@@ -142,8 +142,12 @@ def configure():
 
 
 @task
-def restart_apache(t=0):
-    sudo('service httpd restart')
+def restart_apache(t=0, graceful=False):
+    if graceful:
+        sudo('touch /opt/indico/htdocs/indico.wsgi')
+        sudo('service httpd graceful')
+    else:
+        sudo('service httpd restart')
     time.sleep(int(t))
 
 
@@ -152,7 +156,7 @@ def install_node(eggs, no_deps=False):
     _install(eggs, no_deps=no_deps)
     configure()
     touch_files()
-    restart_apache()
+    restart_apache(graceful=True)
 
 
 # Main tasks
