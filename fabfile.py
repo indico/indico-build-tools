@@ -144,7 +144,7 @@ def configure():
 @task
 def restart_apache(t=0, graceful=False):
     if graceful:
-        sudo('touch /opt/indico/htdocs/indico.wsgi')
+        sudo('touch {0}/htdocs/indico.wsgi'.format(env.indico_dir))
         sudo('service httpd graceful')
     else:
         sudo('service httpd restart')
