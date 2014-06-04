@@ -31,6 +31,8 @@ def load_cluster(cluster_name):
 
     if cluster_info is not None:
         env.hosts = cluster_info['machines']
+        env.branch = cluster_info.get('branch', env.branch)
+        env.remote = cluster_info.get('remote', env.remote)
     else:
         if confirm("Did you mean 'server:{0}'?".format(cluster_name)):
             env.hosts = [cluster_name]
