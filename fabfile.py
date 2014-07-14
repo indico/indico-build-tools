@@ -87,7 +87,8 @@ def _checkout_sources():
 def _build_sources():
 
     with lcd(env.code_dir):
-        local('fab package_release:no_clean=True,py_versions={0}'.format('/'.join(env.py_versions)))
+        local('fab package_release:no_clean=True,py_versions={0},build_here=t'.format(
+            '/'.join(env.py_versions)))
         egg_name = local("find dist -name '*.egg' | head -1", capture=True)
 
     return [os.path.join(env.code_dir, egg_name)]
