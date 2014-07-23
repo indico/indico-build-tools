@@ -10,8 +10,11 @@ test:
     machines:
         - test-worker-1
         - test-worker-2
+    branch: master
 
 dev:
     name: "development"
     machines:
         - dev-worker-1
+    remote: jdoe
+    branch: fix-1234
