@@ -5,8 +5,8 @@ src_base_dir = "/opt/indico/src"
 remote = 'origin'
 branch = 'master'
 
-# Python versions eggs will be built for
-py_versions = ['2.6.9']
+# Python version eggs will be built for
+py_version = '2.6.9'
 
 # (remote) path where eggs will be temporarily stored
 remote_tmp_dir = '/tmp/indico-install/'
@@ -19,3 +19,6 @@ EASY_INSTALL_EXEC = 'easy_install-2.6'
 
 indico_dir = '/opt/indico'
 user = 'pferreir'
+
+# path for virtualenv where Indico will be installed
+virtualenv = None

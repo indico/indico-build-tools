@@ -33,6 +33,8 @@ def load_cluster(cluster_name):
         env.hosts = cluster_info['machines']
         env.branch = cluster_info.get('branch', env.branch)
         env.remote = cluster_info.get('remote', env.remote)
+        env.py_version = cluster_info.get('py_version', env.py_version)
+        env.virtualenv = cluster_info.get('virtualenv', env.virtualenv)
     else:
         if confirm("Did you mean 'server:{0}'?".format(cluster_name)):
             env.hosts = [cluster_name]
@@ -87,8 +89,7 @@ def _checkout_sources():
 def _build_sources():
 
     with lcd(env.code_dir):
-        local('fab package_release:no_clean=True,py_versions={0},build_here=t'.format(
-            '/'.join(env.py_versions)))
+        local('fab package_release:no_clean=True,py_versions={0},build_here=t'.format(env.py_version))
         egg_name = local("find dist -name '*.egg' | head -1", capture=True)
 
     return [os.path.join(env.code_dir, egg_name)]
@@ -98,11 +99,17 @@ def _install(eggs, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
     sudo('chmod 777 {0}'.format(env.remote_tmp_dir))
 
+    if env.virtualenv:
+        virtualenv_bin = os.path.join(env.virtualenv, 'bin/')
+    else:
+        virtualenv_bin = ''
+
     for egg in eggs:
         put(egg, env.remote_tmp_dir)
-        sudo('{0}{2} --always-unzip {1}'.format(env.EASY_INSTALL_EXEC,
-                                                os.path.join(env.remote_tmp_dir, os.path.basename(egg)),
-                                                " --no-deps" if no_deps else ""))
+        sudo('{0}{1}{2} --always-unzip {3}'.format(virtualenv_bin,
+                                                   env.EASY_INSTALL_EXEC,
+                                                   " --no-deps" if no_deps else "",
+                                                   os.path.join(env.remote_tmp_dir, os.path.basename(egg))))
 
 
 # Modifiers

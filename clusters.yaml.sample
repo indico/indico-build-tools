@@ -11,6 +11,7 @@ test:
         - test-worker-1
         - test-worker-2
     branch: master
+    virtualenv: /path/to/venv
 
 dev:
     name: "development"
@@ -18,3 +19,4 @@ dev:
         - dev-worker-1
     remote: jdoe
     branch: fix-1234
+    python_version: 2.7
