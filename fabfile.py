@@ -43,20 +43,14 @@ def load_cluster(cluster_name):
 
 
 # Sub-tasks
-def _eggify():
-
-    if env.virtualenv:
-        virtualenv_bin = os.path.join(env.virtualenv, 'bin/')
-    else:
-        virtualenv_bin = ''
-
-    text = local('{0}{1} setup.py bdist_egg'.format(virtualenv_bin, env.PYTHON_EXEC), capture=True)
+def _tarball():
+    text = local('{0}{1} setup.py sdist'.format(virtualenv_bin, env.PYTHON_EXEC), capture=True)
 
     text = text.replace('\n', '')
-    m = re.match(r".*creating 'dist/(.+\.egg)' and adding.*", text)
+    m = re.match(r".*Writing (.*)/setup\.cfg.*", text)
 
     if not m:
-        abort('Egg not found in setup.py output')
+        abort('*.tar.gz not found in setup.py output')
 
     return m.group(1)
 
@@ -77,10 +71,10 @@ def _build_resources():
     cs_dir = os.path.join(env.res_dir, 'plugins', 'search', 'cern_search')
 
     with lcd(yp_dir):
-        res_files.append(os.path.join(yp_dir, 'dist', _eggify()))
+        res_files.append(os.path.join(yp_dir, 'dist', _tarball() + ".tar.gz"))
 
     with lcd(cs_dir):
-        res_files.append(os.path.join(cs_dir, 'dist', _eggify()))
+        res_files.append(os.path.join(cs_dir, 'dist', _tarball() + ".tar.gz"))
 
     return res_files
 
