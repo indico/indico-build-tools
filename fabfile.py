@@ -44,7 +44,7 @@ def load_cluster(cluster_name):
 
 # Sub-tasks
 def _tarball():
-    text = local('{0}{1} setup.py sdist'.format(virtualenv_bin, env.PYTHON_EXEC), capture=True)
+    text = local('{0} setup.py sdist'.format(env.PYTHON_EXEC), capture=True)
 
     text = text.replace('\n', '')
     m = re.match(r".*Writing (.*)/setup\.cfg.*", text)
@@ -105,10 +105,15 @@ def _install(eggs, no_deps=False):
 
     for egg in eggs:
         put(egg, env.remote_tmp_dir)
-        sudo('{0}{1}{2} --always-unzip {3}'.format(virtualenv_bin,
+        sudo("{0}{1}{2} --always-unzip '{3}'".format(virtualenv_bin,
                                                    env.EASY_INSTALL_EXEC,
                                                    " --no-deps" if no_deps else "",
                                                    os.path.join(env.remote_tmp_dir, os.path.basename(egg))))
+
+def _cleanup(eggs):
+    for egg in eggs:
+        print yellow(" * Deleting {0}".format(egg))
+        local('rm {0}'.format(egg))
 
 
 # Modifiers
@@ -188,7 +193,7 @@ def apply_patch(path):
 
 
 @task
-def deploy(cluster="dev", no_deps=False):
+def deploy(cluster="dev", no_deps=False, cleanup=True):
     """
     Deploys Indico
     """
@@ -209,3 +214,5 @@ def deploy(cluster="dev", no_deps=False):
     print yellow('\n'.join("  * {0}".format(egg) for egg in eggs))
 
     execute(install_node, eggs, no_deps=no_deps)
+
+    _cleanup(eggs)
