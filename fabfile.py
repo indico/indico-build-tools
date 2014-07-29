@@ -43,9 +43,14 @@ def load_cluster(cluster_name):
 
 
 # Sub-tasks
-
 def _eggify():
-    text = local('%(PYTHON_EXEC)s setup.py bdist_egg' % env, capture=True)
+
+    if env.virtualenv:
+        virtualenv_bin = os.path.join(env.virtualenv, 'bin/')
+    else:
+        virtualenv_bin = ''
+
+    text = local('{0}{1} setup.py bdist_egg'.format(virtualenv_bin, env.PYTHON_EXEC), capture=True)
 
     text = text.replace('\n', '')
     m = re.match(r".*creating 'dist/(.+\.egg)' and adding.*", text)
