@@ -94,7 +94,7 @@ def _build_sources():
     return [os.path.join(env.code_dir, egg_name)]
 
 
-def _install(eggs, no_deps=False):
+def _install(files, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
     sudo('chmod 777 {0}'.format(env.remote_tmp_dir))
 
@@ -103,17 +103,17 @@ def _install(eggs, no_deps=False):
     else:
         virtualenv_bin = ''
 
-    for egg in eggs:
-        put(egg, env.remote_tmp_dir)
+    for fpath in files:
+        put(fpath, env.remote_tmp_dir)
         sudo("{0}{1}{2} --always-unzip '{3}'".format(virtualenv_bin,
                                                    env.EASY_INSTALL_EXEC,
                                                    " --no-deps" if no_deps else "",
-                                                   os.path.join(env.remote_tmp_dir, os.path.basename(egg))))
+                                                   os.path.join(env.remote_tmp_dir, os.path.basename(fpath))))
 
-def _cleanup(eggs):
-    for egg in eggs:
-        print yellow(" * Deleting {0}".format(egg))
-        local('rm {0}'.format(egg))
+def _cleanup(files):
+    for fpath in files:
+        print yellow(" * Deleting {0}".format(fpath))
+        local('rm {0}'.format(fpath))
 
 
 # Modifiers
@@ -166,8 +166,8 @@ def restart_apache(t=0, graceful=False):
 
 
 @task
-def install_node(eggs, no_deps=False):
-    _install(eggs, no_deps=no_deps)
+def install_node(files, no_deps=False):
+    _install(files, no_deps=no_deps)
     configure()
     touch_files()
     restart_apache(graceful=True)
@@ -197,7 +197,7 @@ def deploy(cluster="dev", no_deps=False, cleanup=True):
     """
     Deploys Indico
     """
-    eggs = []
+    files = []
 
     # if no cluster/server has been specified through another option
     if not env.hosts:
@@ -207,12 +207,12 @@ def deploy(cluster="dev", no_deps=False, cleanup=True):
 
     _checkout_sources()
     _copy_resources()
-    eggs += _build_sources()
-    eggs += _build_resources()
+    files += _build_sources()
+    files += _build_resources()
 
-    print green("Egg list:")
-    print yellow('\n'.join("  * {0}".format(egg) for egg in eggs))
+    print green("File list:")
+    print yellow('\n'.join("  * {0}".format(fpath) for fpath in files))
 
-    execute(install_node, eggs, no_deps=no_deps)
+    execute(install_node, files, no_deps=no_deps)
 
-    _cleanup(eggs)
+    _cleanup(files)
