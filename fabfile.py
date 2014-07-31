@@ -166,9 +166,9 @@ def configure():
 def restart_apache(t=0, graceful=False):
     if graceful:
         sudo('touch {0}/htdocs/indico.wsgi'.format(env.indico_dir))
-        sudo('service httpd graceful')
+        run('sudo -E service httpd graceful')
     else:
-        sudo('service httpd restart')
+        run('sudo -E service httpd restart')
     time.sleep(int(t))
 
 
