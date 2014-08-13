@@ -105,7 +105,7 @@ def _install(files, no_deps=False):
 
     for fpath in files:
         remote_fname = os.path.join(env.remote_tmp_dir, os.path.basename(fpath))
-        sudo("rm '{0}'".format(remote_fname))
+        sudo("rm '{0}'".format(remote_fname), warn_only=True)
         put(fpath, env.remote_tmp_dir)
         sudo("{0}{1}{2} --always-unzip '{3}'".format(virtualenv_bin,
                                                      env.EASY_INSTALL_EXEC,
