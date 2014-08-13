@@ -104,16 +104,18 @@ def _install(files, no_deps=False):
         virtualenv_bin = ''
 
     for fpath in files:
+        remote_fname = os.path.join(env.remote_tmp_dir, os.path.basename(fpath))
+        sudo("rm '{0}'".format(remote_fname))
         put(fpath, env.remote_tmp_dir)
         sudo("{0}{1}{2} --always-unzip '{3}'".format(virtualenv_bin,
-                                                   env.EASY_INSTALL_EXEC,
-                                                   " --no-deps" if no_deps else "",
-                                                   os.path.join(env.remote_tmp_dir, os.path.basename(fpath))))
+                                                     env.EASY_INSTALL_EXEC,
+                                                     " --no-deps" if no_deps else "",
+                                                     remote_fname))
 
 def _cleanup(files):
     for fpath in files:
         print yellow(" * Deleting {0}".format(fpath))
-        local('rm {0}'.format(fpath))
+        local("rm '{0}'".format(fpath))
 
 
 # Modifiers
