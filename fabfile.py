@@ -4,6 +4,7 @@ import datetime
 import sys
 import time
 import getpass
+from functools import wraps
 
 from fabric.api import *
 from fabric.contrib.console import confirm
@@ -47,7 +48,21 @@ def load_cluster(cluster_name):
             sys.exit(-1)
 
 
+def with_virtualenv(func):
+    @wraps(func)
+    def _func(*args, **kwargs):
+        if env.virtualenv:
+            virtualenv_bin = os.path.join(env.virtualenv, 'bin/')
+        else:
+            virtualenv_bin = ''
+
+        return func(virtualenv_bin, *args, **kwargs)
+
+    return _func
+
+
 # Sub-tasks
+
 def _tarball():
     text = local('{0} setup.py sdist'.format(env.PYTHON_EXEC), capture=True)
 
@@ -99,14 +114,10 @@ def _build_sources():
     return [os.path.join(env.code_dir, egg_name)]
 
 
-def _install(files, no_deps=False):
+@with_virtualenv
+def _install(virtualenv_bin, files, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
     sudo('chmod 777 {0}'.format(env.remote_tmp_dir))
-
-    if env.virtualenv:
-        virtualenv_bin = os.path.join(env.virtualenv, 'bin/')
-    else:
-        virtualenv_bin = ''
 
     for fpath in files:
         remote_fname = os.path.join(env.remote_tmp_dir, os.path.basename(fpath))
@@ -116,6 +127,7 @@ def _install(files, no_deps=False):
                                                      env.EASY_INSTALL_EXEC,
                                                      " --no-deps" if no_deps else "",
                                                      remote_fname))
+
 
 def _cleanup(files):
     for fpath in files:
@@ -145,6 +157,11 @@ def branch(name):
     env.branch = name
 
 
+@task
+def venv(path):
+    env.virtualenv = path
+
+
 # Deployment tasks
 
 @task
@@ -157,12 +174,8 @@ def touch_files():
 
 
 @task
-def configure():
-
-    if env.virtualenv:
-        virtualenv_bin = os.path.join(env.virtualenv, 'bin/')
-    else:
-        virtualenv_bin = ''
+@with_virtualenv
+def configure(virtualenv_bin):
 
     sudo('{0}indico_initial_setup --existing-config={1}/etc/indico.conf'.format(
         virtualenv_bin,
@@ -190,12 +203,14 @@ def install_node(files, no_deps=False):
 # Main tasks
 
 @task
-def apply_patch(path):
+@with_virtualenv
+def apply_patch(virtualenv_bin, path):
     """
     Applies a 'live' patch to Indico's code
     """
-    indicoPkgPath = run("%(PYTHON_EXEC)s -c 'import os, MaKaC; "
-                        "print os.path.split(os.path.split(MaKaC.__file__)[0])[0]'" % env)
+    indicoPkgPath = run("{0}{1} -c 'import os, MaKaC; "
+                        "print os.path.split(os.path.split(MaKaC.__file__)[0])[0]'".format(
+                            virtualenv_bin, env.PYTHON_EXEC))
 
     put(path, env.remote_tmp_dir)
     patch_path = os.path.join(env.remote_tmp_dir, os.path.basename(path))
