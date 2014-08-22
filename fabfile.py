@@ -9,13 +9,25 @@ from functools import wraps
 from fabric.api import *
 from fabric.contrib.console import confirm
 from fabric.api import execute, run
-from fabric.colors import green, yellow
+from fabric.colors import green, yellow, cyan
 
 import yaml
 
 
+class HostPropertyProxy(object):
+    """
+    Host-specific proxy for property access
+    """
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __getattr__(self, attr):
+        return self._obj.get(env.host, {}).get(attr, getattr(env, attr))
+
+
 CONFIG_FILE = "config.py"
 CLUSTERS_FILE = os.path.join(os.getcwd(), 'clusters.yaml')
+ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv', 'install_resources']
 
 execfile(CONFIG_FILE, {}, env)
 
@@ -24,8 +36,26 @@ env.code_dir = os.path.join(env.src_base_dir, 'indico')
 env.datetime = datetime.datetime.now()
 env.user = os.environ.get('KRB_REAL_USER', getpass.getuser())
 
+env._host_property_tree = {}
+env.host_properties = HostPropertyProxy(env._host_property_tree)
+
 
 # Utility functions
+
+def process_node_properties(cluster_members):
+    host_list = []
+
+    for member in cluster_members:
+        if isinstance(member, dict):
+            host = member.pop('hostname')
+            env._host_property_tree[host] = member
+            host_list.append(host)
+        else:
+            env._host_property_tree[member] = {}
+            host_list.append(member)
+
+    return host_list
+
 
 def load_cluster(cluster_name):
     """
@@ -36,11 +66,11 @@ def load_cluster(cluster_name):
     cluster_info = clusters.get(cluster_name)
 
     if cluster_info is not None:
-        env.hosts = cluster_info['machines']
         env.branch = cluster_info.get('branch', env.branch)
         env.remote = cluster_info.get('remote', env.remote)
         env.py_version = cluster_info.get('py_version', env.py_version)
         env.virtualenv = cluster_info.get('virtualenv', env.virtualenv)
+        env.hosts = process_node_properties(cluster_info['machines'])
     else:
         if confirm("Did you mean 'server:{0}'?".format(cluster_name)):
             env.hosts = [cluster_name]
@@ -52,13 +82,23 @@ def with_virtualenv(func):
     @wraps(func)
     def _func(*args, **kwargs):
         if env.virtualenv:
-            virtualenv_bin = os.path.join(env.virtualenv, 'bin/')
+            virtualenv_bin = os.path.join(env.host_properties.virtualenv, 'bin/')
         else:
             virtualenv_bin = ''
 
         return func(virtualenv_bin, *args, **kwargs)
 
     return _func
+
+
+def print_node_properties(hostname):
+    properties = env._host_property_tree.get(hostname, {})
+    properties['hostname'] = hostname
+
+    for key in ALL_PROPERTIES:
+        # print property from clusters.yaml, or environment default otherwise
+        default = getattr(env, key, None)
+        print " * {0}: {1}".format(cyan(key, bold=True), yellow(properties.get(key, default)))
 
 
 # Sub-tasks
@@ -102,7 +142,7 @@ def _build_resources():
 def _checkout_sources():
     with lcd(env.code_dir):
         local('git fetch {0}'.format(env.remote))
-        local('git checkout {remote}/{branch}'.format(**env))
+        local('git checkout {remote}/{branch}'.format(**env.host_properties))
 
 
 def _build_sources():
@@ -119,7 +159,7 @@ def _install(virtualenv_bin, files, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
     sudo('chmod 777 {0}'.format(env.remote_tmp_dir))
 
-    for fpath in files:
+    for fpath in files if env.host_properties.install_resources else files[:1]:
         remote_fname = os.path.join(env.remote_tmp_dir, os.path.basename(fpath))
         sudo("rm '{0}'".format(remote_fname), warn_only=True)
         put(fpath, env.remote_tmp_dir)
@@ -168,9 +208,9 @@ def venv(path):
 def touch_files():
     with settings(warn_only=True):
         sudo("find {0}/htdocs/ -type d -name '.webassets-cache' -exec rm -rf {{}} \;".format(
-            env.indico_dir))
+            env.host_properties.indico_dir))
     sudo("find {0}/htdocs -exec touch -d '{1}' {{}} \;".format(
-        env.indico_dir, env.datetime.strftime('%a, %d %b %Y %X %z')))
+        env.host_properties.indico_dir, env.datetime.strftime('%a, %d %b %Y %X %z')))
 
 
 @task
@@ -179,13 +219,13 @@ def configure(virtualenv_bin):
 
     sudo('{0}indico_initial_setup --existing-config={1}/etc/indico.conf'.format(
         virtualenv_bin,
-        env.indico_dir))
+        env.host_properties.indico_dir))
 
 
 @task
 def restart_apache(t=0, graceful=True):
     if graceful:
-        sudo('touch {0}/htdocs/indico.wsgi'.format(env.indico_dir))
+        sudo('touch {0}/htdocs/indico.wsgi'.format(env.host_properties.indico_dir))
         run('sudo -E service httpd graceful')
     else:
         run('sudo -E service httpd restart')
@@ -194,6 +234,11 @@ def restart_apache(t=0, graceful=True):
 
 @task
 def install_node(files, no_deps=False):
+
+    print cyan("Deploying into node:", bold=True)
+    print_node_properties(env.host)
+    print
+
     _install(files, no_deps=no_deps)
     configure()
     touch_files()
