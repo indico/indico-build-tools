@@ -24,7 +24,12 @@ env.datetime = datetime.datetime.now()
 env.user = os.environ.get('KRB_REAL_USER', getpass.getuser())
 
 
+# Utility functions
+
 def load_cluster(cluster_name):
+    """
+    Loads cluster info from file into environment
+    """
     clusters = yaml.load(open(CLUSTERS_FILE, 'r'))
 
     cluster_info = clusters.get(cluster_name)
