@@ -155,6 +155,11 @@ def _build_sources():
     return [os.path.join(env.code_dir, egg_name)]
 
 
+@with_virtualenv
+def _fix_permissions(virtualenv):
+    sudo('chmod 644 {0}/lib/python2.7/site-packages/zc.queue-*/EGG-INFO/*'.format(virtualenv))
+
+
 @with_virtualenv('bin')
 def _install(virtualenv_bin, files, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
@@ -241,6 +246,7 @@ def install_node(files, no_deps=False):
     print
 
     _install(files, no_deps=no_deps)
+    _fix_permissions()
     configure()
     touch_files()
     restart_apache()
