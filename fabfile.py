@@ -22,8 +22,10 @@ class HostPropertyProxy(object):
         self._obj = obj
 
     def __getattr__(self, attr):
-        return self._obj.get(env.host, {}).get(attr, getattr(env, attr))
+        return self._obj.get(env.host, {}).get(attr, getattr(env, attr, None))
 
+    def __getitem__(self, attr):
+        return getattr(self, attr)
 
 CONFIG_FILE = "config.py"
 CLUSTERS_FILE = os.path.join(os.getcwd(), 'clusters.yaml')
