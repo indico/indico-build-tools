@@ -80,7 +80,7 @@ def load_cluster(cluster_name):
             sys.exit(-1)
 
 
-def with_virtualenv(path_elem):
+def with_virtualenv(path_elem=''):
     def _decorator(func):
         @wraps(func)
         def _wrapper(*args, **kwargs):
@@ -157,9 +157,9 @@ def _build_sources():
     return [os.path.join(env.code_dir, egg_name)]
 
 
-@with_virtualenv
-def _fix_permissions(virtualenv):
-    sudo('chmod 644 {0}/lib/python2.7/site-packages/zc.queue-*/EGG-INFO/*'.format(virtualenv))
+@with_virtualenv('lib')
+def _fix_permissions(virtualenv_lib):
+    sudo('chmod 644 {0}/python2.7/site-packages/zc.queue-*/EGG-INFO/*'.format(virtualenv_lib))
 
 
 @with_virtualenv('bin')
@@ -222,9 +222,8 @@ def touch_files():
 
 
 @task
-@with_virtualenv
+@with_virtualenv('bin')
 def configure(virtualenv_bin):
-
     sudo('{0}indico_initial_setup --existing-config={1}/etc/indico.conf'.format(
         virtualenv_bin,
         env.host_properties.indico_dir))
