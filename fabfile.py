@@ -78,17 +78,18 @@ def load_cluster(cluster_name):
             sys.exit(-1)
 
 
-def with_virtualenv(func):
-    @wraps(func)
-    def _func(*args, **kwargs):
-        if env.virtualenv:
-            virtualenv_bin = os.path.join(env.host_properties.virtualenv, 'bin/')
-        else:
-            virtualenv_bin = ''
+def with_virtualenv(path_elem):
+    def _decorator(func):
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            if env.virtualenv:
+                virtualenv_path = os.path.join(env.host_properties.virtualenv, path_elem, '')
+            else:
+                virtualenv_path = ''
 
-        return func(virtualenv_bin, *args, **kwargs)
-
-    return _func
+            return func(virtualenv_path, *args, **kwargs)
+        return _wrapper
+    return _decorator
 
 
 def print_node_properties(hostname):
@@ -154,7 +155,7 @@ def _build_sources():
     return [os.path.join(env.code_dir, egg_name)]
 
 
-@with_virtualenv
+@with_virtualenv('bin')
 def _install(virtualenv_bin, files, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
     sudo('chmod 777 {0}'.format(env.remote_tmp_dir))
@@ -248,7 +249,7 @@ def install_node(files, no_deps=False):
 # Main tasks
 
 @task
-@with_virtualenv
+@with_virtualenv('bin')
 def apply_patch(virtualenv_bin, path):
     """
     Applies a 'live' patch to Indico's code
