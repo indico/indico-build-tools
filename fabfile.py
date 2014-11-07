@@ -72,6 +72,7 @@ def load_cluster(cluster_name):
         env.remote = cluster_info.get('remote', env.remote)
         env.py_version = cluster_info.get('py_version', env.py_version)
         env.virtualenv = cluster_info.get('virtualenv', env.virtualenv)
+        env.install_resources = cluster_info.get('install_resources', env.get('install_resources'))
         env.hosts = process_node_properties(cluster_info['machines'])
     else:
         if confirm("Did you mean 'server:{0}'?".format(cluster_name)):
