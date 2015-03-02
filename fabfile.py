@@ -34,6 +34,8 @@ ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv', 'i
 execfile(CONFIG_FILE, {}, env)
 
 env.code_dir = os.path.join(env.src_base_dir, 'indico')
+env.plugins_dir = os.path.join(env.src_base_dir, 'indico-plugins')
+env.cern_plugins_dir = os.path.join(env.src_base_dir, 'indico-plugins-cern')
 env.datetime = datetime.datetime.now()
 env.user = os.environ.get('KRB_REAL_USER', getpass.getuser())
 
@@ -134,6 +136,15 @@ def _build_resources():
 
 def _checkout_sources():
     with lcd(env.code_dir):
+        local('git fetch {0}'.format(env.remote))
+        local('git checkout {remote}/{branch}'.format(**env.host_properties))
+
+
+def _checkout_plugins():
+    with lcd(env.plugins_dir):
+        local('git fetch {0}'.format(env.remote))
+        local('git checkout {remote}/{branch}'.format(**env.host_properties))
+    with lcd(env.cern_plugins_dir):
         local('git fetch {0}'.format(env.remote))
         local('git checkout {remote}/{branch}'.format(**env.host_properties))
 
@@ -278,8 +289,9 @@ def deploy(cluster="dev", no_deps=False, cleanup=True):
     confirm('Are you sure you want to install?')
 
     _checkout_sources()
+    _checkout_plugins()
     files += _build_sources()
-    files += _build_resources()
+    # files += _build_resources()
 
     print green("File list:")
     print yellow('\n'.join("  * {0}".format(fpath) for fpath in files))
