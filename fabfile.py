@@ -109,6 +109,7 @@ def print_node_properties(hostname):
 # Sub-tasks
 
 def _tarball():
+    local('rm -rf dist')
     text = local('{0} setup.py sdist'.format(env.PYTHON_EXEC), capture=True)
 
     text = text.replace('\n', '')
@@ -120,18 +121,22 @@ def _tarball():
     return m.group(1)
 
 
-def _build_resources():
-    res_files = []
-    yp_dir = os.path.join(env.res_dir, 'plugins', 'epayment', 'CERNYellowPay')
-    cs_dir = os.path.join(env.res_dir, 'plugins', 'search', 'cern_search')
+def _build_plugins():
+    plugin_files = []
 
-    with lcd(yp_dir):
-        res_files.append(os.path.join(yp_dir, 'dist', _tarball() + ".tar.gz"))
+    for plugin in env.plugins:
+        print cyan(" * Plugin {0}".format(plugin))
+        plugin_dir = os.path.join(env.plugins_dir, plugin)
+        with lcd(plugin_dir):
+            plugin_files.append(os.path.join(plugin_dir, 'dist', _tarball() + '.tar.gz'))
 
-    with lcd(cs_dir):
-        res_files.append(os.path.join(cs_dir, 'dist', _tarball() + ".tar.gz"))
+    for plugin in env.cern_plugins:
+        print cyan(" * CERN plugin {0}".format(plugin))
+        plugin_dir = os.path.join(env.cern_plugins_dir, plugin)
+        with lcd(plugin_dir):
+            plugin_files.append(os.path.join(plugin_dir, 'dist', _tarball() + '.tar.gz'))
 
-    return res_files
+    return plugin_files
 
 
 def _checkout_sources():
@@ -291,7 +296,7 @@ def deploy(cluster="dev", no_deps=False, cleanup=True):
     _checkout_sources()
     _checkout_plugins()
     files += _build_sources()
-    # files += _build_resources()
+    files += _build_plugins()
 
     print green("File list:")
     print yellow('\n'.join("  * {0}".format(fpath) for fpath in files))

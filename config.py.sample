@@ -22,3 +22,9 @@ user = 'pferreir'
 
 # path for virtualenv where Indico will be installed
 virtualenv = None
+
+# indico plugins
+plugins = []
+
+# cern-specific indico plugins
+cern_plugins = []
