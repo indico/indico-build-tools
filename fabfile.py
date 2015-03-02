@@ -29,7 +29,7 @@ class HostPropertyProxy(object):
 
 CONFIG_FILE = "config.py"
 CLUSTERS_FILE = os.path.join(os.getcwd(), 'clusters.yaml')
-ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv', 'install_resources']
+ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv']
 
 execfile(CONFIG_FILE, {}, env)
 
@@ -73,7 +73,6 @@ def load_cluster(cluster_name):
         env.remote = cluster_info.get('remote', env.remote)
         env.py_version = cluster_info.get('py_version', env.py_version)
         env.virtualenv = cluster_info.get('virtualenv', env.virtualenv)
-        env.install_resources = cluster_info.get('install_resources', env.get('install_resources'))
         env.hosts = process_node_properties(cluster_info['machines'])
     else:
         if confirm("Did you mean 'server:{0}'?".format(cluster_name)):
@@ -166,14 +165,19 @@ def _install(virtualenv_bin, files, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
     sudo('chmod 777 {0}'.format(env.remote_tmp_dir))
 
-    for fpath in files if env.host_properties.install_resources else files[:1]:
+    for fpath in files:
         remote_fname = os.path.join(env.remote_tmp_dir, os.path.basename(fpath))
         sudo("rm -f '{0}'".format(remote_fname))
         put(fpath, env.remote_tmp_dir)
-        sudo("{0}{1}{2} --always-unzip '{3}'".format(virtualenv_bin,
-                                                     env.EASY_INSTALL_EXEC,
-                                                     " --no-deps" if no_deps else "",
-                                                     remote_fname))
+        if fpath.endswith('.whl'):
+            sudo("{0}pip install {1} '{2}'".format(virtualenv_bin,
+                                                   " --no-deps" if no_deps else "",
+                                                   remote_fname))
+        else:
+            sudo("{0}{1}{2} --always-unzip '{3}'".format(virtualenv_bin,
+                                                         env.EASY_INSTALL_EXEC,
+                                                         " --no-deps" if no_deps else "",
+                                                         remote_fname))
 
 
 def _cleanup(files):
