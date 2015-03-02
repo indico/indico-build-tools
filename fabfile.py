@@ -33,7 +33,6 @@ ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv', 'i
 
 execfile(CONFIG_FILE, {}, env)
 
-env.res_dir = os.path.join(env.src_base_dir, 'resources')
 env.code_dir = os.path.join(env.src_base_dir, 'indico')
 env.datetime = datetime.datetime.now()
 env.user = os.environ.get('KRB_REAL_USER', getpass.getuser())
@@ -117,16 +116,6 @@ def _tarball():
         abort('*.tar.gz not found in setup.py output')
 
     return m.group(1)
-
-
-def _copy_resources():
-    """
-    Copies CERN resources to the file tree
-    """
-
-    with lcd(env.code_dir):
-        local('cp -r {res_dir}/images/* {code_dir}/indico/htdocs/images'.format(**env))
-        local('cp -r {res_dir}/scripts/FoundationSync {code_dir}/indico/MaKaC/common'.format(**env))
 
 
 def _build_resources():
@@ -289,7 +278,6 @@ def deploy(cluster="dev", no_deps=False, cleanup=True):
     confirm('Are you sure you want to install?')
 
     _checkout_sources()
-    _copy_resources()
     files += _build_sources()
     files += _build_resources()
 
