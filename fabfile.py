@@ -150,8 +150,8 @@ def _checkout_sources():
 
 
 def _build_sources():
-
     with lcd(env.code_dir):
+        local('rm -rf build')
         local('fab package_release:no_clean=True,py_versions={0},build_here=t'.format(env.py_version))
         egg_name = local("find dist -name '*.egg' | head -1", capture=True)
 
