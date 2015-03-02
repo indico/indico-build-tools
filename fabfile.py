@@ -108,17 +108,10 @@ def print_node_properties(hostname):
 
 # Sub-tasks
 
-def _tarball():
-    local('rm -rf dist')
-    text = local('{0} setup.py sdist'.format(env.PYTHON_EXEC), capture=True)
-
-    text = text.replace('\n', '')
-    m = re.match(r".*Writing (.*)/setup\.cfg.*", text)
-
-    if not m:
-        abort('*.tar.gz not found in setup.py output')
-
-    return m.group(1)
+def _wheel():
+    local('rm -rf dist build wheelhouse *.egg-info')
+    local('{0} setup.py bdist_wheel'.format(env.PYTHON_EXEC))
+    return local("find dist -name '*.whl' | head -1", capture=True)
 
 
 def _build_plugins():
@@ -128,13 +121,13 @@ def _build_plugins():
         print cyan(" * Plugin {0}".format(plugin))
         plugin_dir = os.path.join(env.plugins_dir, plugin)
         with lcd(plugin_dir):
-            plugin_files.append(os.path.join(plugin_dir, 'dist', _tarball() + '.tar.gz'))
+            plugin_files.append(os.path.join(plugin_dir, _wheel()))
 
     for plugin in env.cern_plugins:
         print cyan(" * CERN plugin {0}".format(plugin))
         plugin_dir = os.path.join(env.cern_plugins_dir, plugin)
         with lcd(plugin_dir):
-            plugin_files.append(os.path.join(plugin_dir, 'dist', _tarball() + '.tar.gz'))
+            plugin_files.append(os.path.join(plugin_dir, _wheel()))
 
     return plugin_files
 
