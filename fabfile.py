@@ -278,6 +278,7 @@ def apply_patch(virtualenv_bin, path):
 
 
 @task
+@runs_once
 def deploy(cluster="dev", no_deps=False, cleanup=True):
     """
     Deploys Indico
