@@ -1,5 +1,4 @@
 import os
-import re
 import datetime
 import sys
 import time
@@ -29,7 +28,7 @@ class HostPropertyProxy(object):
 
 CONFIG_FILE = "config.py"
 CLUSTERS_FILE = os.path.join(os.getcwd(), 'clusters.yaml')
-ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv']
+ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv', 'plugins', 'cern_plugins']
 
 execfile(CONFIG_FILE, {}, env)
 
@@ -73,6 +72,9 @@ def load_cluster(cluster_name):
         env.remote = cluster_info.get('remote', env.remote)
         env.py_version = cluster_info.get('py_version', env.py_version)
         env.virtualenv = cluster_info.get('virtualenv', env.virtualenv)
+        env.plugins = set(cluster_info.get('plugins', env.plugins) + cluster_info.get('extra_plugins', []))
+        env.cern_plugins = set(cluster_info.get('cern_plugins', env.cern_plugins) +
+                               cluster_info.get('extra_cern_plugins', []))
         env.hosts = process_node_properties(cluster_info['machines'])
     else:
         if confirm("Did you mean 'server:{0}'?".format(cluster_name)):
@@ -102,7 +104,12 @@ def print_node_properties(hostname):
     for key in ALL_PROPERTIES:
         # print property from clusters.yaml, or environment default otherwise
         default = getattr(env, key, None)
-        print " * {0}: {1}".format(cyan(key, bold=True), yellow(properties.get(key, default)))
+        value = properties.get(key, default)
+        if isinstance(value, (list, set, tuple)):
+            if isinstance(value, set):
+                value = sorted(value)
+            value = ', '.join(value)
+        print " * {0}: {1}".format(cyan(key, bold=True), yellow(value))
 
 
 # Sub-tasks
