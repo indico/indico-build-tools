@@ -147,10 +147,10 @@ def _checkout_sources():
 def _checkout_plugins():
     with lcd(env.plugins_dir):
         local('git fetch {0}'.format(env.remote))
-        local('git checkout {remote}/{branch}'.format(**env.host_properties))
+        local('git checkout {remote}/{plugin_branch}'.format(**env.host_properties))
     with lcd(env.cern_plugins_dir):
         local('git fetch {0}'.format(env.remote))
-        local('git checkout {remote}/{branch}'.format(**env.host_properties))
+        local('git checkout {remote}/{cern_plugin_branch}'.format(**env.host_properties))
 
 
 def _build_sources():
@@ -196,26 +196,43 @@ def _cleanup(files):
 # Modifiers
 
 @task
+@runs_once
 def cluster(name):
     load_cluster(name)
 
 
 @task
+@runs_once
 def server(name):
     env.hosts = [name]
 
 
 @task
+@runs_once
 def remote(name):
     env.remote = name
 
 
 @task
+@runs_once
 def branch(name):
     env.branch = name
 
 
 @task
+@runs_once
+def plugin_branch(name):
+    env.plugin_branch = name
+
+
+@task
+@runs_once
+def cern_plugin_branch(name):
+    env.cern_plugin_branch = name
+
+
+@task
+@runs_once
 def venv(path):
     env.virtualenv = path
 

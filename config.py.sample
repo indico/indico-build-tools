@@ -4,6 +4,8 @@ src_base_dir = "/opt/indico/src"
 # branch to checkout
 remote = 'origin'
 branch = 'master'
+plugin_branch = "master"
+cern_plugin_branch = "master"
 
 # Python version eggs will be built for
 py_version = '2.6.9'
