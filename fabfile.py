@@ -127,13 +127,13 @@ def _build_plugins():
         print cyan(" * Plugin {0}".format(plugin))
         plugin_dir = os.path.join(env.plugins_dir, plugin)
         with lcd(plugin_dir):
-            plugin_files.append(os.path.join(plugin_dir, _wheel()))
+            plugin_files.append(('indico_' + plugin, os.path.join(plugin_dir, _wheel())))
 
     for plugin in env.cern_plugins:
         print cyan(" * CERN plugin {0}".format(plugin))
         plugin_dir = os.path.join(env.cern_plugins_dir, plugin)
         with lcd(plugin_dir):
-            plugin_files.append(os.path.join(plugin_dir, _wheel()))
+            plugin_files.append(('indico_' + plugin, os.path.join(plugin_dir, _wheel())))
 
     return plugin_files
 
@@ -159,7 +159,7 @@ def _build_sources():
         local('fab package_release:no_clean=True,py_versions={0},build_here=t'.format(env.py_version))
         egg_name = local("find dist -name '*.egg' | head -1", capture=True)
 
-    return [os.path.join(env.code_dir, egg_name)]
+    return [('indico', os.path.join(env.code_dir, egg_name))]
 
 
 @with_virtualenv('lib')
@@ -172,13 +172,15 @@ def _install(virtualenv_bin, files, no_deps=False):
     sudo('mkdir -p {0}'.format(env.remote_tmp_dir))
     sudo('chmod 777 {0}'.format(env.remote_tmp_dir))
 
-    for fpath in files:
+    for package, fpath in files:
         remote_fname = os.path.join(env.remote_tmp_dir, os.path.basename(fpath))
         sudo("rm -f '{0}'".format(remote_fname))
         put(fpath, env.remote_tmp_dir)
         if fpath.endswith('.whl'):
+            with settings(warn_only=True):
+                sudo("{0}pip uninstall '{1}'".format(virtualenv_bin, package))
             sudo("{0}pip install {1} '{2}'".format(virtualenv_bin,
-                                                   " --no-deps" if no_deps else "",
+                                                   "--no-deps" if no_deps else "",
                                                    remote_fname))
         else:
             sudo("{0}{1}{2} --always-unzip '{3}'".format(virtualenv_bin,
@@ -321,7 +323,7 @@ def deploy(cluster="dev", no_deps=False, cleanup=True):
     files += _build_plugins()
 
     print green("File list:")
-    print yellow('\n'.join("  * {0}".format(fpath) for fpath in files))
+    print yellow('\n'.join("  * {0} [{1}]".format(pkg, fpath) for pkg, fpath in files))
 
     execute(install_node, files, no_deps=no_deps)
 
