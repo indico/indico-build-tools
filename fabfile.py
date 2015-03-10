@@ -178,7 +178,7 @@ def _install(virtualenv_bin, files, no_deps=False):
         put(fpath, env.remote_tmp_dir)
         if fpath.endswith('.whl'):
             with settings(warn_only=True):
-                sudo("{0}pip uninstall '{1}'".format(virtualenv_bin, package))
+                sudo("{0}pip uninstall -y '{1}'".format(virtualenv_bin, package))
             sudo("{0}pip install {1} '{2}'".format(virtualenv_bin,
                                                    "--no-deps" if no_deps else "",
                                                    remote_fname))
