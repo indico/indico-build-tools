@@ -129,16 +129,25 @@ def _build_plugins():
     for plugin in env.plugins:
         print cyan(" * Plugin {0}".format(plugin))
         plugin_dir = os.path.join(env.plugins_dir, plugin)
+        _build_plugin_docs(plugin_dir)
         with lcd(plugin_dir):
             plugin_files.append(('indico_' + plugin, os.path.join(plugin_dir, _wheel())))
 
     for plugin in env.cern_plugins:
         print cyan(" * CERN plugin {0}".format(plugin))
         plugin_dir = os.path.join(env.cern_plugins_dir, plugin)
+        _build_plugin_docs(plugin_dir)
         with lcd(plugin_dir):
             plugin_files.append(('indico_' + plugin, os.path.join(plugin_dir, _wheel())))
 
     return plugin_files
+
+
+def _build_plugin_docs(plugin_dir):
+    docs_dir = os.path.join(plugin_dir, 'docs')
+    if os.path.isdir(docs_dir):
+        print green("   .. Generating documentation:")
+        local('make -C {} clean install'.format(docs_dir))
 
 
 def _checkout_sources():
