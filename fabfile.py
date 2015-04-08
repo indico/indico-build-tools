@@ -28,7 +28,8 @@ class HostPropertyProxy(object):
 
 CONFIG_FILE = "config.py"
 CLUSTERS_FILE = os.path.join(os.getcwd(), 'clusters.yaml')
-ALL_PROPERTIES = ['hostname', 'branch', 'remote', 'indico_dir', 'virtualenv', 'plugins', 'cern_plugins']
+ALL_PROPERTIES = ['hostname', 'branch', 'plugin_branch', 'cern_plugin_branch', 'remote', 'indico_dir', 'virtualenv',
+                  'plugins', 'cern_plugins']
 
 execfile(CONFIG_FILE, {}, env)
 
@@ -69,6 +70,8 @@ def load_cluster(cluster_name):
 
     if cluster_info is not None:
         env.branch = cluster_info.get('branch', env.branch)
+        env.plugin_branch = cluster_info.get('plugin_branch', env.plugin_branch)
+        env.cern_plugin_branch = cluster_info.get('cern_plugin_branch', env.cern_plugin_branch)
         env.remote = cluster_info.get('remote', env.remote)
         env.py_version = cluster_info.get('py_version', env.py_version)
         env.virtualenv = cluster_info.get('virtualenv', env.virtualenv)
