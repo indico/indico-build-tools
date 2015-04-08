@@ -193,7 +193,7 @@ def _install(virtualenv_bin, files, no_deps=False):
 
 
 def _cleanup(files):
-    for fpath in files:
+    for pkg, fpath in files:
         print yellow(" * Deleting {0}".format(fpath))
         local("rm '{0}'".format(fpath))
 
