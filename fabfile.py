@@ -265,7 +265,7 @@ def touch_files():
 @task
 @with_virtualenv('bin')
 def configure(virtualenv_bin):
-    sudo('{0}indico_initial_setup --existing-config={1}/etc/indico.conf'.format(
+    sudo('{0}indico_initial_setup --existing-config={1}/etc/indico.conf --no-upgrade-config'.format(
         virtualenv_bin,
         env.host_properties.indico_dir))
 
