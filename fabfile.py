@@ -176,7 +176,8 @@ def _build_sources():
 
 @with_virtualenv('lib')
 def _fix_permissions(virtualenv_lib):
-    sudo('chmod 644 {0}/python2.7/site-packages/zc.queue-*/EGG-INFO/*'.format(virtualenv_lib))
+    with settings(warn_only=True):
+        sudo('chmod 644 {0}/python2.7/site-packages/zc.queue-*/EGG-INFO/*'.format(virtualenv_lib))
 
 
 @with_virtualenv('bin')
