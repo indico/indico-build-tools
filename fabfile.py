@@ -282,7 +282,7 @@ def restart_apache(t=0, graceful=True):
 
 
 @task
-def install_node(files, no_deps=False):
+def install_node(files, no_deps=False, no_restart=False):
 
     print cyan("Deploying into node:", bold=True)
     print_node_properties(env.host)
@@ -292,7 +292,8 @@ def install_node(files, no_deps=False):
     _fix_permissions()
     configure()
     touch_files()
-    restart_apache()
+    if not no_restart:
+        restart_apache()
 
 
 # Main tasks
@@ -318,7 +319,7 @@ def apply_patch(virtualenv_bin, path):
 
 @task
 @runs_once
-def deploy(cluster="dev", no_deps=False, cleanup=True):
+def deploy(cluster="dev", no_deps=False, no_restart=False):
     """
     Deploys Indico
     """
@@ -338,6 +339,6 @@ def deploy(cluster="dev", no_deps=False, cleanup=True):
     print green("File list:")
     print yellow('\n'.join("  * {0} [{1}]".format(pkg, fpath) for pkg, fpath in files))
 
-    execute(install_node, files, no_deps=no_deps)
+    execute(install_node, files, no_deps=no_deps, no_restart=no_restart)
 
     _cleanup(files)
