@@ -115,6 +115,14 @@ def print_node_properties(hostname):
         print " * {0}: {1}".format(cyan(key, bold=True), yellow(value))
 
 
+def split_remote_branch(prop_name):
+    branch_name = getattr(env, prop_name)
+    if '/' in branch_name:
+        return branch_name.split('/', 1)
+    else:
+        return env.remote, env.branch
+
+
 # Sub-tasks
 
 def _wheel():
@@ -151,18 +159,21 @@ def _build_plugin_docs(plugin_dir):
 
 
 def _checkout_sources():
+    remote, branch = split_remote_branch('branch')
     with lcd(env.code_dir):
-        local('git fetch {0}'.format(env.remote))
-        local('git checkout {remote}/{branch}'.format(**env.host_properties))
+        local('git fetch {0}'.format(remote))
+        local('git checkout {0}/{1}'.format(remote, branch))
 
 
 def _checkout_plugins():
     with lcd(env.plugins_dir):
-        local('git fetch {0}'.format(env.remote))
-        local('git checkout {remote}/{plugin_branch}'.format(**env.host_properties))
+        remote, branch = split_remote_branch('plugin_branch')
+        local('git fetch {0}'.format(remote))
+        local('git checkout {0}/{1}'.format(remote, branch))
     with lcd(env.cern_plugins_dir):
-        local('git fetch {0}'.format(env.remote))
-        local('git checkout {remote}/{cern_plugin_branch}'.format(**env.host_properties))
+        remote, branch = split_remote_branch('cern_plugin_branch')
+        local('git fetch {0}'.format(remote))
+        local('git checkout {0}/{1}'.format(remote, branch))
 
 
 def _build_sources():
