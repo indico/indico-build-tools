@@ -120,7 +120,7 @@ def split_remote_branch(prop_name):
     if '/' in branch_name:
         return branch_name.split('/', 1)
     else:
-        return env.remote, env.branch
+        return env.remote, branch_name
 
 
 # Sub-tasks
