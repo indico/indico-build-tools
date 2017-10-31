@@ -1,0 +1,18 @@
+# the domain is appended to all server names
+domain: .mycompany.org
+
+haproxy-clusters:
+  staging:
+    # the name of the backend containing the indico workers
+    backend: indico-workers
+    # username/password to access the haproxy stats
+    credentials: [USERNAME, PASSWORD]
+    # the list of loadbalancers for the cluster
+    servers:
+      - indico-staging-lb1
+      - indico-staging-lb2
+  production:
+    credentials: [USERNAME, PASSWORD]
+    servers:
+      - indico-production-lb1
+      - indico-production-lb2

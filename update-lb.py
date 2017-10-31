@@ -7,20 +7,17 @@ from operator import itemgetter
 
 import click
 import requests
+import yaml
 from colorclass import Color
 from termcolor import colored
 from terminaltables import AsciiTable
 
 
-USER = os.environ['HAPROXY_STATS_USER']
-PASS = os.environ['HAPROXY_STATS_PASS']
-
 STATES = ['ready', 'drain', 'maint']
-DOMAIN = '.cern.ch'
-CLUSTERS = {
-    'preprod': ['indico-preprod-lb1', 'indico-preprod-lb2'],
-    'prod': ['indico-lb1', 'indico-lb2'],
-}
+with open(os.path.join(os.path.dirname(__file__), 'servers.yaml')) as f:
+    config = yaml.safe_load(f)
+    CLUSTERS = config['haproxy-clusters']
+    DOMAIN = config['domain']
 
 
 def _cformat_sub(m):
@@ -42,20 +39,22 @@ def cformat(string):
     return Color(string)
 
 
-def _get_stats(lb):
-    rv = requests.get('https://{}{}/haproxy-stats;csv'.format(lb, DOMAIN), auth=(USER, PASS)).content
+def _get_stats(lb, cluster_config):
+    auth = tuple(cluster_config['credentials'])
+    backend_name = cluster_config['backend']
+    rv = requests.get('https://{}{}/haproxy-stats;csv'.format(lb, DOMAIN), auth=auth).content
     rv = re.sub('^# ', '', rv)
     reader = csv.DictReader(rv.splitlines())
-    # a server, in indico-workers, not a backup
+    # a server, in the correct backend, not a backup
     return [{'svname': x['svname'],
              'status': x['status'],
              'check_status': x['check_status'],
              'iid': x['iid']}
             for x in sorted(reader, key=itemgetter('svname'))
-            if x['type'] == '2' and x['pxname'] == 'indico-workers' and x['bck'] == '0']
+            if x['type'] == '2' and x['pxname'] == backend_name and x['bck'] == '0']
 
 
-def _dump_stats(lbs, title):
+def _dump_stats(lbs, cluster_config, title):
     def _format_cell(stats):
         if stats['status'] == 'UP':
             status = click.style(stats['status'], 'green', bold=True)
@@ -75,7 +74,7 @@ def _dump_stats(lbs, title):
     server_stats_lb = defaultdict(OrderedDict)
     iids = {}
     for lb in lbs:
-        for entry in _get_stats(lb):
+        for entry in _get_stats(lb, cluster_config):
             assert iids.setdefault(lb, entry['iid']) == entry['iid']
             server_stats_lb[entry['svname']][lb] = entry
     for svname, data in sorted(server_stats_lb.iteritems()):
@@ -104,7 +103,7 @@ def _resolve_servers(available, requested):
     return sorted(rv), False
 
 
-def _update_state(lbs, servers, state, iids):
+def _update_state(lbs, servers, state, iids, cluster_config):
     state_color = {'ready': 'green!', 'drain': 'yellow', 'maint': 'yellow!'}[state]
     for lb in lbs:
         for server in servers:
@@ -112,7 +111,8 @@ def _update_state(lbs, servers, state, iids):
                                '%%{%s}{}%%{reset}%%{cyan}' % state_color)
                        .format(lb, server, state.upper()))
         payload = {'s': servers, 'b': '#' + iids[lb], 'action': state}
-        requests.post('https://{}{}/haproxy-stats'.format(lb, DOMAIN), auth=(USER, PASS), data=payload)
+        requests.post('https://{}{}/haproxy-stats'.format(lb, DOMAIN), auth=tuple(cluster_config['credentials']),
+                      data=payload)
 
 
 @click.command()
@@ -125,8 +125,8 @@ def main(cluster, servers, set_state):
     if servers and not set_state:
         click.secho('No state update requested; ignoring server list', fg='yellow')
         click.echo()
-    lbs = sorted(CLUSTERS[cluster])
-    available_servers, iids = _dump_stats(lbs, 'Current status')
+    lbs = sorted(CLUSTERS[cluster]['servers'])
+    available_servers, iids = _dump_stats(lbs, CLUSTERS[cluster], 'Current status')
     if not set_state:
         sys.exit(0)
     click.echo()
@@ -134,10 +134,10 @@ def main(cluster, servers, set_state):
     if set_state != 'ready' and all_servers:
         click.confirm(click.style('Really set ALL servers to {}?', fg='yellow', bold=True).format(set_state),
                       abort=True)
-    _update_state(lbs, servers, set_state, iids)
+    _update_state(lbs, servers, set_state, iids, CLUSTERS[cluster])
 
     click.echo()
-    _dump_stats(lbs, 'New status')
+    _dump_stats(lbs, CLUSTERS[cluster], 'New status')
 
 
 if __name__ == '__main__':
