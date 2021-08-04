@@ -35,7 +35,7 @@ def cformat(string):
     """
     reset = colored(u'')
     string = string.replace(u'%{reset}', reset)
-    string = re.sub(ur'%\{(?P<fg>[a-z]+)(?P<fg_bold>!?)(?:,(?P<bg>[a-z]+))?}', _cformat_sub, string)
+    string = re.sub(r'%\{(?P<fg>[a-z]+)(?P<fg_bold>!?)(?:,(?P<bg>[a-z]+))?}', _cformat_sub, string)
     if not string.endswith(reset):
         string += reset
     return Color(string)
@@ -44,7 +44,7 @@ def cformat(string):
 def _get_stats(lb, cluster_config):
     auth = tuple(cluster_config['credentials'])
     backend_name = cluster_config['backend']
-    rv = requests.get('https://{}{}/haproxy-stats;csv'.format(lb, DOMAIN), auth=auth).content
+    rv = requests.get('https://{}{}/haproxy-stats;csv'.format(lb, DOMAIN), auth=auth).text
     rv = re.sub('^# ', '', rv)
     reader = csv.DictReader(rv.splitlines())
     # a server, in the correct backend, not a backup
@@ -79,8 +79,8 @@ def _dump_stats(lbs, cluster_config, title):
         for entry in _get_stats(lb, cluster_config):
             assert iids.setdefault(lb, entry['iid']) == entry['iid']
             server_stats_lb[entry['svname']][lb] = entry
-    for svname, data in sorted(server_stats_lb.iteritems()):
-        table_data.append([svname] + [_format_cell(x) for x in data.itervalues()])
+    for svname, data in sorted(server_stats_lb.items()):
+        table_data.append([svname] + [_format_cell(x) for x in data.values()])
     click.echo(AsciiTable(table_data, click.style(title, fg='white', bold=True)).table)
     return dict(server_stats_lb), iids
 
