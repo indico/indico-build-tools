@@ -70,6 +70,8 @@ def _dump_stats(lbs, cluster_config, title):
             status = click.style(stats['status'], 'red', bold=True)
         else:
             status = click.style(stats['status'], 'red')
+        if not stats['check_status']:
+            return status
         return '{} ({})'.format(status, stats['check_status'])
 
     table_data = [['Server'] + lbs]
